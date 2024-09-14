@@ -1,72 +1,92 @@
 package com.example.heurexa;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
+import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 public class SplashScreen extends AppCompatActivity {
+
+    private TextView textHeurexa;
+    private TextView textSmileCapture;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash_screen);
 
-        // Enable full-screen mode
-        EdgeToEdge.enable(this);
+        // Find views from the layout
+        ImageView rightImage = findViewById(R.id.right_image);
+        textHeurexa = findViewById(R.id.text_heurexa);
+        textSmileCapture = findViewById(R.id.text_smile_capture);
 
-        // Set system bar insets for padding
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+        // Load animations from XML resources
+        Animation slideRightFull = AnimationUtils.loadAnimation(this, R.anim.slide_right);
 
-        // Initialize views
-        ImageView img = findViewById(R.id.back);
-        TextView Heurexa = findViewById(R.id.Heurexa);
-        TextView smile = findViewById(R.id.smile);
+        // Start the right image animation immediately
+        rightImage.startAnimation(slideRightFull);
 
-        // Load and start animations
-        Animation myanim = AnimationUtils.loadAnimation(SplashScreen.this, R.anim.bg);
-        img.startAnimation(myanim);
-
-        Animation tet = AnimationUtils.loadAnimation(SplashScreen.this, R.anim.bounce);
-        Heurexa.startAnimation(tet);
-
-        Animation tet2 = AnimationUtils.loadAnimation(SplashScreen.this, R.anim.bounce);
-        smile.startAnimation(tet2);
-
-        // Delay and navigate to the appropriate activity
-        new Handler().postDelayed(() -> {
-            // Check if the user is logged in (replace with your login logic)
-            boolean isLoggedIn = checkLoginStatus();
-
-            Intent intent;
-            if (isLoggedIn) {
-                // User is logged in, go to MainActivity
-                intent = new Intent(SplashScreen.this, MainActivity.class);
-            } else {
-                // User is not logged in, go to LoginActivity
-                intent = new Intent(SplashScreen.this, GetStarted.class);
+        // Set a listener for the end of the animation
+        slideRightFull.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+                // Animation started
             }
-            startActivity(intent);
-            finish();
-        }, 2000); // Adjust the delay as needed
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                // Start letter-by-letter animation after the right image animation ends
+                animateText("Heurexa", textHeurexa, 100);  // Display "Heurexa" with a 100ms delay
+                new Handler().postDelayed(() -> animateText("Smile and Capture", textSmileCapture, 100), 1000);  // Start after "Heurexa"
+
+                // Start checking login status immediately after the "Smile and Capture" animation ends
+                new Handler().postDelayed(() -> checkLoginStatus(), 1100 + (textSmileCapture.getText().length() * 100)); // Calculate total time for the last animation
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+                // Animation repeated
+            }
+        });
     }
 
-    private boolean checkLoginStatus() {
-        // Replace this with your actual login logic
-        // For example, you might check a shared preference or database
-        return false; // Assuming user is not logged in initially
+    // Method to animate text letter by letter
+    private void animateText(String text, TextView textView, int delay) {
+        textView.setText("");  // Clear the TextView
+        textView.setVisibility(View.VISIBLE);  // Make the TextView visible
+        new Handler().postDelayed(new Runnable() {
+            int index = 0;
+
+            @Override
+            public void run() {
+                if (index < text.length()) {
+                    textView.append(String.valueOf(text.charAt(index)));  // Append each letter
+                    index++;
+                    new Handler().postDelayed(this, delay);  // Delay for the next letter
+                }
+            }
+        }, delay);  // Start delay
+    }
+
+    // Method to check login status
+    private void checkLoginStatus() {
+        SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        boolean isLoggedIn = sharedPreferences.getBoolean("isLoggedIn", false); // Default to false if not found
+
+        Intent intent;
+        if (isLoggedIn) {
+            intent = new Intent(SplashScreen.this, MainActivity.class);
+        } else {
+            intent = new Intent(SplashScreen.this, GetStarted.class);
+        }
+        startActivity(intent);
+        finish();  // Close this activity
     }
 }
