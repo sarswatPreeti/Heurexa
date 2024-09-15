@@ -61,7 +61,7 @@ public class SplashScreen extends AppCompatActivity {
             }
             startActivity(intent);
             finish();
-        }, 2000); // Adjust the delay as needed
+        }, 4000); // Adjust the delay as needed
     }
 
     private boolean checkLoginStatus() {
